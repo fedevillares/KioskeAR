@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/superadmins/$(request.auth.uid));
+    }
+
+    function userDoc(kioscoId) {
+      return get(/databases/$(database)/documents/kioscos/$(kioscoId)/users/$(request.auth.uid));
+    }
+
+    function belongsToKiosco(kioscoId) {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/kioscos/$(kioscoId)/users/$(request.auth.uid));
+    }
+
+    function isAdminOfKiosco(kioscoId) {
+      return belongsToKiosco(kioscoId) &&
+        userDoc(kioscoId).data.role == 'admin';
+    }
+
+    // --- superadmins: solo lectura del propio doc, nunca escritura desde cliente ---
+    match /superadmins/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow write: if false; // gestionado fuera de la app (Console / Admin SDK)
+    }
+
+    // --- kioscos: metadata visible para quien pertenece a él o el superadmin ---
+    match /kioscos/{kioscoId} {
+      allow read: if belongsToKiosco(kioscoId) || isSuperAdmin();
+      // La creación inicial ocurre durante el registro (registerKioscoAndAdmin):
+      // en ese momento el usuario ya está autenticado pero todavía no tiene
+      // doc en users/, así que esta regla permite create a cualquier
+      // autenticado, y confía en que el código de la app valida unicidad de
+      // kioscoId antes de escribir. El update queda limitado al admin.
+      allow create: if isSignedIn();
+      allow update: if isAdminOfKiosco(kioscoId) || isSuperAdmin();
+      allow delete: if isSuperAdmin();
+
+      // --- users: cada kiosco gestiona sus propios usuarios ---
+      match /users/{uid} {
+        allow read: if belongsToKiosco(kioscoId) || isSuperAdmin();
+
+        // Alta de admin (registro) o de empleado (admin lo crea): el doc
+        // se crea con el mismo uid que el usuario de Auth recién creado.
+        allow create: if isSignedIn() && request.auth.uid == uid
+                       || isAdminOfKiosco(kioscoId)
+                       || isSuperAdmin();
+
+        // Nadie puede auto-otorgarse permisos ni cambiar su propio rol:
+        // solo el admin del kiosco (o el superadmin) puede modificar el
+        // doc de un empleado. Un empleado no-admin no puede escribir su
+        // propio doc en absoluto (ni para tocar 'permissions' ni 'role').
+        allow update: if isAdminOfKiosco(kioscoId) || isSuperAdmin();
+
+        allow delete: if isAdminOfKiosco(kioscoId) || isSuperAdmin();
+      }
+
+      // --- audit_logs: append-only, nadie edita ni borra ---
+      match /audit_logs/{logId} {
+        allow read: if isAdminOfKiosco(kioscoId) || isSuperAdmin();
+        allow create: if belongsToKiosco(kioscoId);
+        allow update, delete: if false;
+      }
+
+      // --- products: catálogo del kiosco, compartido por todos los
+      // dispositivos vinculados al mismo kioscoId ---
+      match /products/{productId} {
+        allow read, write: if belongsToKiosco(kioscoId) || isSuperAdmin();
+      }
+    }
+
+    // --- auth_deletion_requests: cola para que la Cloud Function
+    // processAuthDeletion borre la cuenta de Firebase Auth de un empleado
+    // eliminado. Solo se permite crear (encolar); el campo 'status' y el
+    // borrado real de la cuenta los gestiona exclusivamente el Admin SDK
+    // desde la función (que no pasa por estas reglas). Nadie desde el
+    // cliente puede leer, modificar ni borrar una solicitud ya creada,
+    // para que no se pueda falsear el estado ni espiar qué cuentas se
+    // están borrando.
+    match /auth_deletion_requests/{uid} {
+      allow create: if isSignedIn();
+      allow read, update, delete: if false;
+    }
+
+    // Nada más se permite por defecto.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

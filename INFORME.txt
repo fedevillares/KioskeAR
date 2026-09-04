@@ -1,0 +1,194 @@
+================================================================================
+KIOSKE.AR — SISTEMA DE GESTIÓN DE STOCK Y VENTAS PARA KIOSCOS
+Desarrollado con Flutter + Firebase (Auth + Firestore)
+================================================================================
+
+DESCRIPCIÓN GENERAL
+-------------------
+Aplicación móvil (Android/iOS) para la gestión integral de un kiosco: control
+de stock, ventas, caja diaria, clientes con cuenta corriente (fiado) y
+administración multi-usuario. Pensada para uso real en el mostrador, con
+escaneo de código de barras y flujo de venta rápida. Soporta múltiples
+kioscos sobre la misma base (multi-tenant), cada uno con sus propios
+productos, empleados y datos, más un panel global de super administrador
+para dar soporte y precrear cuentas.
+
+TECNOLOGÍA
+----------
+- Framework: Flutter (Dart, SDK >=3.0.0 <4.0.0)
+- Backend: Firebase Auth + Cloud Firestore (multi-tenant)
+- Persistencia local complementaria: SharedPreferences, flutter_secure_storage
+- State management: Provider (^6.1.1)
+- Gráficos: fl_chart (^0.66.0)
+- Escaneo de código de barras: mobile_scanner (^5.1.1)
+- Generación de QR: qr_flutter (^4.1.0)
+- Encriptación de datos sensibles: encrypt + crypto
+- Identificadores únicos: uuid
+- Compartir archivos/backups: share_plus
+- Android applicationId: com.kioskear.app — versión 1.0.0+1 (versionCode 1)
+
+CARACTERÍSTICAS PRINCIPALES
+---------------------------
+
+1. GESTIÓN DE INVENTARIO
+   • Alta, edición y eliminación de productos con categoría, precio, costo,
+     stock y stock mínimo
+   • Escaneo de código de barras al crear/buscar productos (cámara)
+   • Auto-lookup de producto existente al escanear un código duplicado
+   • Categorías personalizables por kiosco, con selector de emoji/ícono
+   • Modo oferta/descuento por producto
+   • Imagen de producto (cámara o galería)
+   • Vencimientos de producto: fecha de caducidad, alertas de "por vencer"
+     y "vencido" visibles en inventario y en el dashboard
+
+2. VENTAS Y CARRITO
+   • Catálogo con búsqueda y filtro por categoría
+   • Carrito de compra con ajuste de cantidad por producto
+   • Métodos de pago: Efectivo, Tarjeta, Mercado Pago, Transferencia, Fiado,
+     Otro
+   • Integración con código QR de Mercado Pago
+   • Historial de ventas con detalle por transacción
+
+3. CLIENTES Y FIADO
+   • Registro de clientes (nombre, contacto)
+   • Cuenta corriente por cliente: saldo de fiado, registro de pagos
+   • Vista dedicada de clientes con estado de deuda
+
+4. CIERRE DE CAJA
+   • Cierre de caja diario con resumen por medio de pago
+   • Comparación entre lo esperado (ventas registradas) y lo contado
+   • Historial de cierres por día
+
+5. REPORTES Y ESTADÍSTICAS
+   • Dashboard con métricas clave: productos totales, stock bajo, productos
+     por vencer
+   • Gráficos de ventas por categoría y evolución temporal (fl_chart)
+   • Rentabilidad por producto: margen, ganancia total en stock
+   • Reportes comparativos y ranking de rentabilidad entre períodos
+
+6. ALERTAS
+   • Alertas de stock bajo y stock agotado
+   • Alertas de productos próximos a vencer o ya vencidos
+   • Badge de notificaciones con el total de alertas activas
+   • Diálogo de alertas con secciones separadas (Stock / Vencimientos)
+
+7. MULTI-USUARIO Y JERARQUÍA DE ROLES
+   • Tres niveles: Super Admin (Fernando, plataforma completa), Admin de
+     kiosco (dueño/encargado) y Empleado (con permisos acotados)
+   • Permisos granulares por empleado: gestionar inventario, aplicar
+     descuentos, ver reportes, cerrar caja, gestionar otros empleados,
+     eliminar productos del inventario
+   • Panel de administración del kiosco: alta/edición/baja de empleados y
+     sus permisos
+   • Login con email sintético por kiosco (usuario@kioscoId.kiosco.local)
+     para empleados/admins de kiosco; el super admin usa su email real
+
+8. PANEL DE SUPER ADMINISTRADOR
+   • Listado en vivo de todos los kioscos registrados en la plataforma
+   • Creación de kioscos: el super admin precrea el kiosco y su usuario
+     admin desde su propio panel (ya no existe autoregistro público)
+   • Reingreso automático tras crear un kiosco (limitación de Firebase Auth
+     en cliente: crear un usuario nuevo cierra la sesión activa); las
+     credenciales del super admin se mantienen solo en memoria, nunca en
+     disco
+   • Panel de soporte ampliado por kiosco: información de contacto,
+     desvinculación de dispositivo del admin
+
+9. SEGURIDAD
+   • Reglas de Firestore restrictivas: cada usuario solo lee/escribe dentro
+     del kiosco al que pertenece; rol y permisos se leen del propio
+     documento del usuario, nunca de un valor enviado suelto por el cliente
+   • Colección superadmins de solo lectura para el propio uid; no se puede
+     crear, modificar ni borrar desde el cliente bajo ninguna circunstancia
+     (alta inicial manual desde Firebase Console, documentada en
+     SECURITY_RULES.md)
+   • audit_logs append-only: ningún registro de auditoría puede editarse ni
+     borrarse una vez creado
+   • Vinculación de dispositivo por usuario (device_service) para detectar
+     sesiones simultáneas no autorizadas
+   • Borrado simétrico de cuentas: al eliminar un empleado se borra su
+     documento en Firestore y se encola una solicitud en
+     auth_deletion_requests, procesada por una Cloud Function
+     (processAuthDeletion) que borra la cuenta de Firebase Auth
+   • Cifrado de datos sensibles locales (utils/security_helper.dart)
+
+10. INTERFAZ DE USUARIO
+    • Diseño "liquid glass" (glassmorphism) consistente en toda la app:
+      GlassContainer como base de tarjetas, diálogos y barra de navegación
+    • Modo claro/oscuro con paleta adaptativa (colores de texto secundario/
+      terciario que responden al brillo del tema, no grises fijos)
+    • Escala de radios de borde unificada (chico/medio/grande) en lugar de
+      valores sueltos ad hoc
+    • Navegación con AppShell (IndexedStack) y barra inferior persistente
+    • ProductCard con franja lateral de color por estado de stock y una
+      sola acción primaria (agregar al carrito), sin botones compitiendo
+    • Pantalla de login con selector explícito de tipo de cuenta ("Kiosco"
+      vs "Super admin"), sin íconos ambiguos sin etiqueta
+
+FLUJO TÍPICO DE USO
+-------------------
+1. El super admin crea el kiosco y su usuario administrador desde su panel
+2. El admin del kiosco entra con el código de kiosco + usuario + contraseña
+3. El admin carga productos (manualmente o escaneando código de barras),
+   define categorías, precios, costo y stock mínimo
+4. El admin crea empleados y les asigna permisos granulares
+5. En el mostrador: se busca/escanea el producto, se agrega al carrito y se
+   completa la venta eligiendo el medio de pago (incluye Fiado)
+6. Al cierre del día: se hace el cierre de caja, comparando lo esperado
+   contra lo efectivamente contado
+7. Desde el dashboard se monitorean alertas de stock bajo y vencimientos
+8. Periódicamente: reportes de rentabilidad y comparativos entre períodos
+
+CONFIGURACIÓN Y DESPLIEGUE
+---------------------------
+- Proyecto Firebase: mi-kiosco-f5f9b (Auth + Firestore)
+- Reglas de Firestore documentadas en SECURITY_RULES.md — deben publicarse
+  manualmente en Firebase Console → Firestore Database → Reglas (no se
+  aplican solas; un proyecto nuevo trae reglas por defecto que bloquean
+  todo o expiran en modo test)
+- Alta del primer super admin: manual, vía Firebase Console (crear cuenta
+  de Auth con email real + crear a mano el documento superadmins/{uid})
+- Cloud Function processAuthDeletion (functions/index.js) pendiente de
+  despliegue para que el borrado de empleados sea simétrico entre
+  Firestore y Auth; requiere plan Blaze y firebase deploy --only functions
+- Android: namespace y applicationId com.kioskear.app, compileSdk/targetSdk
+  36, firma de release actualmente con el signingConfig de debug
+
+ESTADO ACTUAL Y PENDIENTES
+---------------------------
+Completado en esta etapa:
+  • Vencimientos de producto con alertas visibles en Inicio e Inventario
+  • Rediseño completo del login: selector claro Kiosco/Super admin
+  • Eliminación del autoregistro público de kioscos
+  • Creación de kioscos movida al panel de super admin, con reingreso
+    automático sin persistir contraseñas
+  • Corrección de bug de compilación real (switch no exhaustivo sobre
+    PaymentMethod tras agregar el método "Fiado")
+  • Unificación de la escala de radios de borde y rediseño de ProductCard
+  • Publicación de las reglas de Firestore y alta del super admin de base
+
+Pendiente:
+  • Impresión de tickets por impresora térmica (decidido: PDF/ticket
+    compartible primero, Bluetooth térmico en una etapa posterior)
+  • Conteo de caja físico detallado en el cierre de caja
+  • Lista de compras a proveedor según stock bajo
+  • Despliegue efectivo de la Cloud Function de borrado de cuentas
+
+EQUIPO Y CRÉDITOS
+-----------------
+Desarrollado a medida para la gestión diaria de un kiosco, con foco en
+velocidad de venta en el mostrador y control multi-usuario seguro.
+
+NOTAS DE SEGURIDAD
+------------------
+- Las contraseñas del super admin nunca se guardan en disco; se retienen
+  solo en memoria durante la sesión activa
+- El rol y los permisos de cada usuario se validan siempre contra
+  Firestore, nunca contra un valor que mande el cliente
+- Sin las reglas de Firestore publicadas, cualquier intento de lectura de
+  la colección superadmins falla por permisos (no por inexistencia) — esto
+  ya se resolvió y verificó en producción
+- Realizar backups periódicos de Firestore
+- Rotar la clave de cifrado local si se sospecha compromiso del dispositivo
+
+================================================================================

@@ -1,0 +1,27 @@
+================================================================================
+KIOSKE.AR — HISTORIAL DE VERSIONES
+================================================================================
+Instrucciones: cada vez que agregues una funcionalidad o cambio importante,
+sumá una entrada nueva ARRIBA de esta línea con fecha y versión. No borres
+las versiones anteriores: esto es el historial completo del proyecto.
+Nota: este proyecto ya lleva un informe técnico detallado en INFORME.txt —
+usalo como referencia completa.
+================================================================================
+
+--------------------------------------------------------------------------------
+v1.0 — versión base
+--------------------------------------------------------------------------------
+Funciones base:
+- Gestión de inventario: alta/edición/baja de productos, categorías,
+  stock mínimo, escaneo de código de barras.
+- Ventas rápidas desde mostrador con escaneo.
+- Caja diaria.
+- Clientes con cuenta corriente (fiado).
+- Administración multi-usuario y multi-kiosco (multi-tenant) con panel
+  de super administrador.
+- Gráficos de ventas/stock (fl_chart).
+- Generación de QR y backups exportables.
+
+Stack: Flutter + Firebase (Auth + Firestore).
+
+Ver INFORME.txt para el detalle técnico completo.

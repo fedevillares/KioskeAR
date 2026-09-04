@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "488140763242",
+    "project_id": "mi-kiosco-f5f9b",
+    "storage_bucket": "mi-kiosco-f5f9b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:488140763242:android:233793b142962281e5da13",
+        "android_client_info": {
+          "package_name": "com.example.kiosco_stock_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1KOJQ6hpazvHPO7cy0L8pFPhU52PjVyo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:488140763242:android:4b989ec1adebc04fe5da13",
+        "android_client_info": {
+          "package_name": "com.kioskear.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1KOJQ6hpazvHPO7cy0L8pFPhU52PjVyo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
