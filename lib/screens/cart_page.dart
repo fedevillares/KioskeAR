@@ -419,7 +419,6 @@ class _CartPageState extends State<CartPage> {
                               child: GlassContainer(
                                 borderRadius: BorderRadius.circular(16),
                                 width: 140,
-                                enableBlur: false,
                                 padding: EdgeInsets.zero,
                                 child: InkWell(
                                   onTap: () {
@@ -473,7 +472,6 @@ class _CartPageState extends State<CartPage> {
                             padding: const EdgeInsets.only(bottom: 12),
                             child: GlassContainer(
                               borderRadius: BorderRadius.circular(16),
-                              enableBlur: false,
                               padding: const EdgeInsets.all(12),
                               child: Row(
                                 children: [

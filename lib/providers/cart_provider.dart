@@ -1,4 +1,3 @@
-import '../utils/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -28,10 +27,10 @@ class CartProvider with ChangeNotifier {
         final List<dynamic> decoded = json.decode(cartJson);
         _items.clear();
         _items.addAll(decoded.map((item) => CartItem.fromJson(item)).toList());
-        debugLog('✓ Carrito cargado: ${_items.length} items');
+        print('✓ Carrito cargado: ${_items.length} items');
       }
     } catch (e) {
-      debugLog('Error cargando carrito: $e');
+      print('Error cargando carrito: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -43,9 +42,9 @@ class CartProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final cartJson = json.encode(_items.map((item) => item.toJson()).toList());
       await prefs.setString('cart_items', cartJson);
-      debugLog('✓ Carrito guardado: ${_items.length} items');
+      print('✓ Carrito guardado: ${_items.length} items');
     } catch (e) {
-      debugLog('Error guardando carrito: $e');
+      print('Error guardando carrito: $e');
     }
   }
 

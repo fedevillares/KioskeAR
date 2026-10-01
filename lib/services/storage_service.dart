@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../utils/app_logger.dart';
 import '../models/product.dart';
 import '../models/sale.dart';
 
@@ -21,45 +20,27 @@ class StorageService {
   static String _salesKey(String kioscoId) => 'sales_$kioscoId';
   static const int _maxSalesHistory = 5000;
 
-  // Cache en memoria por kioscoId: SharedPreferences guarda todo el catálogo
-  // y el historial de ventas como un único string JSON, así que leerlo desde
-  // disco implica deserializar la lista completa cada vez. Sin este cache,
-  // cada pantalla que navegás (home, inventario, ventas, reportes, cierre de
-  // caja) dispara su propia lectura+parseo completo, y cada venta individual
-  // releía y reescribía hasta 5000 registros. El cache evita releer del disco
-  // mientras el proceso está vivo; se invalida por kioscoId en cada
-  // escritura o borrado para que nunca quede una copia vieja en memoria.
-  static final Map<String, List<Product>> _productsCache = {};
-  static final Map<String, List<Sale>> _salesCache = {};
-
   static Future<bool> saveProducts(String kioscoId, List<Product> products) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final productsJson = json.encode(
         products.map((p) => p.toJson()).toList(),
       );
-      final ok = await prefs.setString(_productsKey(kioscoId), productsJson);
-      if (ok) _productsCache[kioscoId] = List.of(products);
-      return ok;
+      return await prefs.setString(_productsKey(kioscoId), productsJson);
     } catch (e) {
-      debugLog('Error guardando productos: $e');
+      print('Error guardando productos: $e');
       return false;
     }
   }
 
   static Future<List<Product>> loadProducts(String kioscoId) async {
-    final cached = _productsCache[kioscoId];
-    if (cached != null) return List.of(cached);
-
     try {
       final prefs = await SharedPreferences.getInstance();
       final productsJson = prefs.getString(_productsKey(kioscoId));
 
       if (productsJson != null && productsJson.isNotEmpty) {
         final List<dynamic> decoded = json.decode(productsJson);
-        final products = decoded.map((p) => Product.fromJson(p)).toList();
-        _productsCache[kioscoId] = products;
-        return List.of(products);
+        return decoded.map((p) => Product.fromJson(p)).toList();
       }
 
       // Migración desde la clave vieja sin namespacear (instalaciones
@@ -70,15 +51,14 @@ class StorageService {
         final migrated = decoded.map((p) => Product.fromJson(p)).toList();
         await saveProducts(kioscoId, migrated);
         await prefs.remove('products');
-        return List.of(migrated);
+        return migrated;
       }
 
       // Solo el primer kiosco que arranca sin datos recibe el catálogo de
       // ejemplo, para no contaminar instalaciones nuevas vacías a propósito.
-      _productsCache[kioscoId] = [];
       return [];
     } catch (e) {
-      debugLog('Error cargando productos: $e');
+      print('Error cargando productos: $e');
       return [];
     }
   }
@@ -94,28 +74,21 @@ class StorageService {
       final salesJson = json.encode(
         limitedSales.map((s) => s.toJson()).toList(),
       );
-      final ok = await prefs.setString(_salesKey(kioscoId), salesJson);
-      if (ok) _salesCache[kioscoId] = List.of(limitedSales);
-      return ok;
+      return await prefs.setString(_salesKey(kioscoId), salesJson);
     } catch (e) {
-      debugLog('Error guardando ventas: $e');
+      print('Error guardando ventas: $e');
       return false;
     }
   }
 
   static Future<List<Sale>> loadSales(String kioscoId) async {
-    final cached = _salesCache[kioscoId];
-    if (cached != null) return List.of(cached);
-
     try {
       final prefs = await SharedPreferences.getInstance();
       final salesJson = prefs.getString(_salesKey(kioscoId));
 
       if (salesJson != null && salesJson.isNotEmpty) {
         final List<dynamic> decoded = json.decode(salesJson);
-        final sales = decoded.map((s) => Sale.fromJson(s)).toList();
-        _salesCache[kioscoId] = sales;
-        return List.of(sales);
+        return decoded.map((s) => Sale.fromJson(s)).toList();
       }
 
       // Migración desde la clave vieja.
@@ -125,27 +98,23 @@ class StorageService {
         final migrated = decoded.map((s) => Sale.fromJson(s)).toList();
         await saveSales(kioscoId, migrated);
         await prefs.remove('sales');
-        return List.of(migrated);
+        return migrated;
       }
 
-      _salesCache[kioscoId] = [];
       return [];
     } catch (e) {
-      debugLog('Error cargando ventas: $e');
+      print('Error cargando ventas: $e');
       return [];
     }
   }
 
-  /// Registra una venta agregándola al cache en memoria (si ya está
-  /// cargado) en vez de releer el historial completo desde disco en cada
-  /// venta — la diferencia se nota en un turno con muchas ventas seguidas.
   static Future<bool> registerSale(String kioscoId, Sale sale) async {
     try {
       final sales = await loadSales(kioscoId);
       sales.add(sale);
       return await saveSales(kioscoId, sales);
     } catch (e) {
-      debugLog('Error registrando venta: $e');
+      print('Error registrando venta: $e');
       return false;
     }
   }
@@ -155,11 +124,9 @@ class StorageService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_productsKey(kioscoId));
       await prefs.remove(_salesKey(kioscoId));
-      _productsCache.remove(kioscoId);
-      _salesCache.remove(kioscoId);
       return true;
     } catch (e) {
-      debugLog('Error limpiando datos: $e');
+      print('Error limpiando datos: $e');
       return false;
     }
   }
@@ -176,7 +143,7 @@ class StorageService {
         'version': '2.0.0',
       });
     } catch (e) {
-      debugLog('Error exportando datos: $e');
+      print('Error exportando datos: $e');
       return '{}';
     }
   }

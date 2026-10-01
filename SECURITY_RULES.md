@@ -6,21 +6,6 @@ puede aplicar estas restricciones por sí solo: si las reglas reales del
 proyecto son más permisivas que esto, cualquiera con el APK descompilado
 puede saltarse la lógica de la app y escribir directo contra Firestore.
 
-**Estado actual:** las reglas de abajo ya están versionadas en
-[`firestore.rules`](firestore.rules) en la raíz del proyecto (referenciado
-desde `firebase.json`), que es ahora la fuente de verdad ejecutable. Este
-documento queda como explicación en prosa; para desplegar la versión real:
-
-```
-firebase deploy --only firestore:rules
-```
-
-`firestore.rules` incluye además una regla para `kioscos/{kioscoId}/products/{productId}`
-(el catálogo del kiosco) que no estaba en la versión original de este
-documento — sin ella, el `match /{document=**} { allow read, write: if false; }`
-final habría bloqueado todas las lecturas/escrituras de productos que hace
-`FirestoreService`.
-
 ## Estructura de datos relevante
 
 ```

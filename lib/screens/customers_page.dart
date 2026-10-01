@@ -235,7 +235,6 @@ class _CustomersPageState extends State<CustomersPage> {
                                   padding: const EdgeInsets.only(bottom: 10),
                                   child: GlassContainer(
                                     borderRadius: BorderRadius.circular(16),
-                                    enableBlur: false,
                                     child: ListTile(
                                       onTap: () => _openDetail(customer),
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -454,7 +453,6 @@ class _CustomerDetailPageState extends State<CustomerDetailPage> {
                             padding: const EdgeInsets.only(bottom: 8),
                             child: GlassContainer(
                               borderRadius: BorderRadius.circular(14),
-                              enableBlur: false,
                               child: ListTile(
                                 dense: true,
                                 leading: Icon(

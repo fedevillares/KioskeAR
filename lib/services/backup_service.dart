@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
-import '../utils/app_logger.dart';
 import '../models/product.dart';
 import '../models/sale.dart';
 import '../services/storage_service.dart';
@@ -43,10 +42,10 @@ class BackupService {
       
       await file.writeAsString(jsonString);
       
-      debugLog('✅ Backup creado: ${file.path}');
+      print('✅ Backup creado: ${file.path}');
       return file;
     } catch (e) {
-      debugLog('❌ Error creando backup: $e');
+      print('❌ Error creando backup: $e');
       return null;
     }
   }
@@ -101,13 +100,13 @@ class BackupService {
       await productsFile.writeAsString(productsCSV.toString());
       await salesFile.writeAsString(salesCSV.toString());
       
-      debugLog('✅ Backup CSV creado');
-      debugLog('   Productos: ${productsFile.path}');
-      debugLog('   Ventas: ${salesFile.path}');
+      print('✅ Backup CSV creado');
+      print('   Productos: ${productsFile.path}');
+      print('   Ventas: ${salesFile.path}');
       
       return productsFile; // Retornar el primero
     } catch (e) {
-      debugLog('❌ Error creando backup CSV: $e');
+      print('❌ Error creando backup CSV: $e');
       return null;
     }
   }
@@ -121,9 +120,9 @@ class BackupService {
         subject: 'Backup Kioske.AR',
         text: 'Backup de datos - ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}',
       );
-      debugLog('✅ Compartiendo backup: $filePath');
+      print('✅ Compartiendo backup: $filePath');
     } catch (e) {
-      debugLog('❌ Error compartiendo backup: $e');
+      print('❌ Error compartiendo backup: $e');
     }
   }
 
@@ -136,9 +135,9 @@ class BackupService {
         subject: 'Backup Kioske.AR - Datos Completos',
         text: 'Backup de productos y ventas - ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}',
       );
-      debugLog('✅ Compartiendo ${files.length} archivos');
+      print('✅ Compartiendo ${files.length} archivos');
     } catch (e) {
-      debugLog('❌ Error compartiendo archivos: $e');
+      print('❌ Error compartiendo archivos: $e');
     }
   }
 
@@ -148,7 +147,7 @@ class BackupService {
       final file = File(filePath);
       
       if (!await file.exists()) {
-        debugLog('❌ Archivo no existe: $filePath');
+        print('❌ Archivo no existe: $filePath');
         return false;
       }
       
@@ -166,7 +165,7 @@ class BackupService {
             .map((p) => Product.fromJson(p))
             .toList();
         await StorageService.saveProducts(kioscoId, products);
-        debugLog('✅ ${products.length} productos restaurados');
+        print('✅ ${products.length} productos restaurados');
       }
 
       // Restaurar ventas
@@ -175,13 +174,13 @@ class BackupService {
             .map((s) => Sale.fromJson(s))
             .toList();
         await StorageService.saveSales(kioscoId, sales);
-        debugLog('✅ ${sales.length} ventas restauradas');
+        print('✅ ${sales.length} ventas restauradas');
       }
       
-      debugLog('✅ Backup restaurado exitosamente');
+      print('✅ Backup restaurado exitosamente');
       return true;
     } catch (e) {
-      debugLog('❌ Error restaurando backup: $e');
+      print('❌ Error restaurando backup: $e');
       return false;
     }
   }
@@ -195,10 +194,9 @@ class BackupService {
         return [];
       }
       
-      final entities = await directory.list().toList();
-      final files = entities
-          .where((file) =>
-              file.path.contains('kiosco_backup_') ||
+      final files = directory.listSync()
+          .where((file) => 
+              file.path.contains('kiosco_backup_') || 
               file.path.contains('productos_') ||
               file.path.contains('ventas_'))
           .toList();
@@ -206,10 +204,10 @@ class BackupService {
       // Ordenar por fecha (más reciente primero)
       files.sort((a, b) => b.path.compareTo(a.path));
       
-      debugLog('📋 ${files.length} backups encontrados');
+      print('📋 ${files.length} backups encontrados');
       return files;
     } catch (e) {
-      debugLog('❌ Error listando backups: $e');
+      print('❌ Error listando backups: $e');
       return [];
     }
   }
@@ -220,13 +218,13 @@ class BackupService {
       final file = File(filePath);
       if (await file.exists()) {
         await file.delete();
-        debugLog('✅ Backup eliminado: $filePath');
+        print('✅ Backup eliminado: $filePath');
         return true;
       }
-      debugLog('⚠️  Archivo no existe: $filePath');
+      print('⚠️  Archivo no existe: $filePath');
       return false;
     } catch (e) {
-      debugLog('❌ Error eliminando backup: $e');
+      print('❌ Error eliminando backup: $e');
       return false;
     }
   }
@@ -245,10 +243,10 @@ class BackupService {
         }
       }
       
-      debugLog('✅ $deleted backups antiguos eliminados');
+      print('✅ $deleted backups antiguos eliminados');
       return deleted;
     } catch (e) {
-      debugLog('❌ Error limpiando backups: $e');
+      print('❌ Error limpiando backups: $e');
       return 0;
     }
   }
@@ -256,7 +254,7 @@ class BackupService {
   // Backup automático (llamar diariamente)
   static Future<void> autoBackup(String kioscoId) async {
     try {
-      debugLog('🔄 Iniciando backup automático...');
+      print('🔄 Iniciando backup automático...');
 
       // Verificar si ya se hizo backup hoy
       final backups = await getAvailableBackups();
@@ -270,17 +268,17 @@ class BackupService {
       if (!hasBackupToday) {
         final file = await createBackup(kioscoId);
         if (file != null) {
-          debugLog('✅ Backup automático creado: ${file.path}');
+          print('✅ Backup automático creado: ${file.path}');
         }
       } else {
-        debugLog('ℹ️  Ya existe backup de hoy');
+        print('ℹ️  Ya existe backup de hoy');
       }
       
       // Limpiar backups antiguos (mantener solo últimos 30)
       await cleanOldBackups(keepLast: 30);
       
     } catch (e) {
-      debugLog('❌ Error en backup automático: $e');
+      print('❌ Error en backup automático: $e');
     }
   }
 
@@ -301,7 +299,7 @@ class BackupService {
         'total_value': backup['summary']?['total_value'] ?? 0.0,
       };
     } catch (e) {
-      debugLog('❌ Error leyendo info del backup: $e');
+      print('❌ Error leyendo info del backup: $e');
       return null;
     }
   }
@@ -321,10 +319,10 @@ class BackupService {
       if (!backup['data'].containsKey('products')) return false;
       if (!backup['data'].containsKey('sales')) return false;
       
-      debugLog('✅ Backup verificado correctamente');
+      print('✅ Backup verificado correctamente');
       return true;
     } catch (e) {
-      debugLog('❌ Error verificando backup: $e');
+      print('❌ Error verificando backup: $e');
       return false;
     }
   }
@@ -338,7 +336,7 @@ class BackupService {
       }
       return 0;
     } catch (e) {
-      debugLog('❌ Error obteniendo tamaño: $e');
+      print('❌ Error obteniendo tamaño: $e');
       return 0;
     }
   }

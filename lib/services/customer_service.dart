@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../utils/app_logger.dart';
 import '../models/customer.dart';
 
 /// Maneja los clientes y el sistema de fiado (cuenta corriente) de cada
@@ -21,7 +20,7 @@ class CustomerService {
       final List<dynamic> decoded = json.decode(raw);
       return decoded.map((c) => Customer.fromJson(c)).toList();
     } catch (e) {
-      debugLog('Error cargando clientes: $e');
+      print('Error cargando clientes: $e');
       return [];
     }
   }
@@ -32,7 +31,7 @@ class CustomerService {
       final raw = json.encode(customers.map((c) => c.toJson()).toList());
       return await prefs.setString(_customersKey(kioscoId), raw);
     } catch (e) {
-      debugLog('Error guardando clientes: $e');
+      print('Error guardando clientes: $e');
       return false;
     }
   }
@@ -89,7 +88,7 @@ class CustomerService {
       final List<dynamic> decoded = json.decode(raw);
       return decoded.map((t) => CustomerTransaction.fromJson(t)).toList();
     } catch (e) {
-      debugLog('Error cargando movimientos de clientes: $e');
+      print('Error cargando movimientos de clientes: $e');
       return [];
     }
   }
@@ -103,7 +102,7 @@ class CustomerService {
       final raw = json.encode(txns.map((t) => t.toJson()).toList());
       return await prefs.setString(_transactionsKey(kioscoId), raw);
     } catch (e) {
-      debugLog('Error guardando movimientos de clientes: $e');
+      print('Error guardando movimientos de clientes: $e');
       return false;
     }
   }

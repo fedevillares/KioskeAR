@@ -348,7 +348,6 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                 child: GlassContainer(
                   borderRadius: BorderRadius.circular(16),
                   blur: 12,
-                  enableBlur: false,
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [

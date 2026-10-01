@@ -3,7 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 import 'package:uuid/uuid.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../utils/app_logger.dart';
 
 /// Modelo de entrada de auditoría
 class AuditLogEntry {
@@ -152,19 +151,7 @@ class AuditService {
         notes: notes,
       );
 
-      entry = AuditLogEntry(
-        id: entry.id,
-        action: entry.action,
-        userId: entry.userId,
-        entityId: entry.entityId,
-        oldValues: entry.oldValues,
-        newValues: entry.newValues,
-        timestamp: entry.timestamp,
-        ipAddress: entry.ipAddress,
-        reason: entry.reason,
-        notes: entry.notes,
-        hash: entry.calculateHash(),
-      );
+      entry.hash = entry.calculateHash();
 
       final prefs = await SharedPreferences.getInstance();
       final logsJson = prefs.getString(_auditLogsKey) ?? '[]';
@@ -182,13 +169,13 @@ class AuditService {
         // No esperamos (no usamos await bloqueante) para no trabar la UI
         // si la red está lenta; Firestore maneja la cola offline solo.
         _remoteLogsRef(kioscoId).doc(entry.id).set(entry.toJson()).catchError((e) {
-          debugLog('⚠️ No se pudo replicar auditoría a Firestore (quedará en cola offline): $e');
+          print('⚠️ No se pudo replicar auditoría a Firestore (quedará en cola offline): $e');
         });
       }
 
-      debugLog('✓ Acción auditada: $action → $entityId');
+      print('✓ Acción auditada: $action → $entityId');
     } catch (e) {
-      debugLog('❌ Error registrando acción en auditoría: $e');
+      print('❌ Error registrando acción en auditoría: $e');
       rethrow;
     }
   }
@@ -217,7 +204,7 @@ class AuditService {
           .map((l) => AuditLogEntry.fromJson(l as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      debugLog('Error retrieving audit trail: $e');
+      print('Error retrieving audit trail: $e');
       return [];
     }
   }
@@ -264,7 +251,7 @@ class AuditService {
     }
 
     if (tamperedIds.isNotEmpty) {
-      debugLog('⚠️ ALERTA: Se detectó tampering en ${tamperedIds.length} registros de auditoría');
+      print('⚠️ ALERTA: Se detectó tampering en ${tamperedIds.length} registros de auditoría');
 
       await logAction(
         action: 'TAMPERING_DETECTED',
@@ -356,7 +343,7 @@ class AuditService {
 
       return csv.toString();
     } catch (e) {
-      debugLog('Error generating AFIP report: $e');
+      print('Error generating AFIP report: $e');
       return '';
     }
   }
@@ -457,7 +444,7 @@ class AuditService {
         'logs': logs.map((l) => l.toJson()).toList(),
       });
     } catch (e) {
-      debugLog('Error exporting audit logs: $e');
+      print('Error exporting audit logs: $e');
       return '{}';
     }
   }
@@ -475,9 +462,9 @@ class AuditService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_auditLogsKey, json.encode(filtered.map((l) => l.toJson()).toList()));
 
-      debugLog('✓ Limpieza de logs completada. Registros eliminados: ${logs.length - filtered.length}');
+      print('✓ Limpieza de logs completada. Registros eliminados: ${logs.length - filtered.length}');
     } catch (e) {
-      debugLog('Error cleaning up logs: $e');
+      print('Error cleaning up logs: $e');
     }
   }
 }

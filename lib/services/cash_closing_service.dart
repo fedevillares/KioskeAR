@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../utils/app_logger.dart';
 import '../models/cash_closing.dart';
 import '../models/sale.dart';
 import '../utils/helpers.dart';
@@ -25,7 +24,7 @@ class CashClosingService {
       list.sort((a, b) => b.date.compareTo(a.date));
       return list;
     } catch (e) {
-      debugLog('Error cargando cierres de caja: $e');
+      print('Error cargando cierres de caja: $e');
       return [];
     }
   }
@@ -36,7 +35,7 @@ class CashClosingService {
       final raw = json.encode(closings.map((c) => c.toJson()).toList());
       return await prefs.setString(_key(kioscoId), raw);
     } catch (e) {
-      debugLog('Error guardando cierres de caja: $e');
+      print('Error guardando cierres de caja: $e');
       return false;
     }
   }

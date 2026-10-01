@@ -1,4 +1,3 @@
-import '../utils/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -56,14 +55,14 @@ class _SettingsPageState extends State<SettingsPage> {
       final priceHistory = prefs.getBool('price_history_enabled') ?? true;
       final threshold = prefs.getInt('low_stock_threshold') ?? 5;
       
-      debugLog('📥 Cargando configuración...');
+      print('📥 Cargando configuración...');
 
       String decryptedToken = '';
       if (mpToken.isNotEmpty) {
         try {
           decryptedToken = await SecurityHelper.decrypt(mpToken);
         } catch (e) {
-          debugLog('Error desencriptando token: $e');
+          print('Error desencriptando token: $e');
           decryptedToken = '';
         }
       }
@@ -80,7 +79,7 @@ class _SettingsPageState extends State<SettingsPage> {
       
       await MercadoPagoService.debugPrintConfig();
     } catch (e) {
-      debugLog('❌ Error cargando configuración: $e');
+      print('❌ Error cargando configuración: $e');
       setState(() => _isLoading = false);
     }
   }
@@ -89,8 +88,8 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       final token = _mpTokenController.text.trim();
       
-      debugLog('\n🔄 Guardando configuración...');
-      debugLog('Token ingresado: ${token.isNotEmpty ? "${token.length} chars" : "VACÍO"}');
+      print('\n🔄 Guardando configuración...');
+      print('Token ingresado: ${token.isNotEmpty ? "${token.substring(0, 15)}... (${token.length} chars)" : "VACÍO"}');
       
       if (token.isNotEmpty && !token.startsWith('APP_USR') && !token.startsWith('TEST')) {
         if (mounted) {
@@ -153,7 +152,7 @@ class _SettingsPageState extends State<SettingsPage> {
         }
       }
     } catch (e) {
-      debugLog('❌ Excepción: $e');
+      print('❌ Excepción: $e');
       if (mounted) {
         Navigator.of(context, rootNavigator: true).pop();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -185,7 +184,7 @@ class _SettingsPageState extends State<SettingsPage> {
         );
       }
     } catch (e) {
-      debugLog('Error guardando configuración general: $e');
+      print('Error guardando configuración general: $e');
     }
   }
 
@@ -207,7 +206,7 @@ class _SettingsPageState extends State<SettingsPage> {
         }
       }
     } catch (e) {
-      debugLog('Error: $e');
+      print('Error: $e');
     }
   }
 
@@ -286,7 +285,7 @@ class _SettingsPageState extends State<SettingsPage> {
         );
       }
     } catch (e) {
-      debugLog('Error en backup: $e');
+      print('Error en backup: $e');
       if (mounted) {
         Navigator.of(context, rootNavigator: true).pop();
         ScaffoldMessenger.of(context).showSnackBar(

@@ -431,7 +431,6 @@ class _ProductRow extends StatelessWidget {
     return GlassContainer(
       borderRadius: BorderRadius.circular(16),
       blur: 10,
-      enableBlur: false,
       padding: const EdgeInsets.all(12),
       child: Row(
         children: [

@@ -53,7 +53,6 @@ class _ProductCardState extends State<ProductCard> {
         child: GlassContainer(
           borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
           blur: 10,
-          enableBlur: false,
           padding: EdgeInsets.zero,
           child: IntrinsicHeight(
             child: Row(

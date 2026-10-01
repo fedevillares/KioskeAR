@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../utils/app_logger.dart';
 import '../models/cart_item.dart';
 import '../utils/security_helper.dart';
 
@@ -14,7 +13,7 @@ class MercadoPagoService {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getBool('mp_enabled') ?? false;
     } catch (e) {
-      debugLog('Error verificando enabled: $e');
+      print('Error verificando enabled: $e');
       return false;
     }
   }
@@ -25,22 +24,22 @@ class MercadoPagoService {
       
       final enabled = prefs.getBool('mp_enabled') ?? false;
       if (!enabled) {
-        debugLog('MercadoPago deshabilitado');
+        print('MercadoPago deshabilitado');
         return null;
       }
       
       final token = prefs.getString('mp_token');
       if (token == null || token.isEmpty) {
-        debugLog('No hay token guardado');
+        print('No hay token guardado');
         return null;
       }
       
       // Intentar desencriptar
       final decrypted = await SecurityHelper.decrypt(token);
-      debugLog('✓ Token cargado (${decrypted.length} chars)');
+      print('✓ Token cargado: ${decrypted.substring(0, 15)}...');
       return decrypted;
     } catch (e) {
-      debugLog('Error obteniendo token: $e');
+      print('Error obteniendo token: $e');
       return null;
     }
   }
@@ -50,16 +49,16 @@ class MercadoPagoService {
     String? accessToken,
   }) async {
     try {
-      debugLog('═══════════════════════════════════════');
-      debugLog('GUARDANDO CONFIGURACIÓN MERCADO PAGO');
-      debugLog('Enabled: $enabled');
-      debugLog('Token: ${accessToken != null ? "SÍ (${accessToken.length} chars)" : "NO"}');
+      print('═══════════════════════════════════════');
+      print('GUARDANDO CONFIGURACIÓN MERCADO PAGO');
+      print('Enabled: $enabled');
+      print('Token: ${accessToken != null ? "SÍ (${accessToken.length} chars)" : "NO"}');
       
       final prefs = await SharedPreferences.getInstance();
       
       // Guardar enabled
       await prefs.setBool('mp_enabled', enabled);
-      debugLog('✓ Enabled guardado');
+      print('✓ Enabled guardado');
       
       // Guardar token si existe
       if (accessToken != null && accessToken.trim().isNotEmpty) {
@@ -67,63 +66,63 @@ class MercadoPagoService {
         
         // Validar
         if (!cleanToken.startsWith('APP_USR') && !cleanToken.startsWith('TEST')) {
-          debugLog('❌ Token inválido (debe empezar con APP_USR o TEST)');
+          print('❌ Token inválido (debe empezar con APP_USR o TEST)');
           return false;
         }
         
         // Encriptar y guardar
         final encrypted = await SecurityHelper.encrypt(cleanToken);
         await prefs.setString('mp_token', encrypted);
-        debugLog('✓ Token guardado (encriptado: ${encrypted.length} chars)');
+        print('✓ Token guardado (encriptado: ${encrypted.length} chars)');
 
         // Verificar
         final verify = prefs.getString('mp_token');
         if (verify == null || verify.isEmpty) {
-          debugLog('❌ Error: Token no se guardó');
+          print('❌ Error: Token no se guardó');
           return false;
         }
 
         // Verificar que se puede desencriptar
         final testDecrypt = await SecurityHelper.decrypt(verify);
         if (testDecrypt != cleanToken) {
-          debugLog('⚠️ Advertencia: Token desencriptado no coincide exactamente');
+          print('⚠️ Advertencia: Token desencriptado no coincide exactamente');
         } else {
-          debugLog('✓ Verificación OK: Token se puede leer correctamente');
+          print('✓ Verificación OK: Token se puede leer correctamente');
         }
       }
       
       // Commit
       await prefs.commit();
-      debugLog('✓ Commit ejecutado');
+      print('✓ Commit ejecutado');
       
       // Verificación final
       await prefs.reload();
       final finalEnabled = prefs.getBool('mp_enabled');
       final finalToken = prefs.getString('mp_token');
       
-      debugLog('VERIFICACIÓN FINAL:');
-      debugLog('  Enabled: $finalEnabled');
-      debugLog('  Token guardado: ${finalToken != null && finalToken.isNotEmpty}');
+      print('VERIFICACIÓN FINAL:');
+      print('  Enabled: $finalEnabled');
+      print('  Token guardado: ${finalToken != null && finalToken.isNotEmpty}');
       
       if (finalEnabled != enabled) {
-        debugLog('❌ Error: Enabled no coincide');
+        print('❌ Error: Enabled no coincide');
         return false;
       }
       
       if (accessToken != null && accessToken.isNotEmpty) {
         if (finalToken == null || finalToken.isEmpty) {
-          debugLog('❌ Error: Token no persiste');
+          print('❌ Error: Token no persiste');
           return false;
         }
       }
       
-      debugLog('✅ CONFIGURACIÓN GUARDADA EXITOSAMENTE');
-      debugLog('═══════════════════════════════════════');
+      print('✅ CONFIGURACIÓN GUARDADA EXITOSAMENTE');
+      print('═══════════════════════════════════════');
       return true;
     } catch (e, stack) {
-      debugLog('❌ ERROR GUARDANDO:');
-      debugLog('Error: $e');
-      debugLog('Stack: $stack');
+      print('❌ ERROR GUARDANDO:');
+      print('Error: $e');
+      print('Stack: $stack');
       return false;
     }
   }
@@ -135,16 +134,16 @@ class MercadoPagoService {
   }) async {
     try {
       if (items.isEmpty || total <= 0) {
-        debugLog('Carrito vacío');
+        print('Carrito vacío');
         return null;
       }
 
-      debugLog('Creando QR de pago...');
+      print('Creando QR de pago...');
       final accessToken = await getAccessToken();
       
       // Modo prueba
       if (accessToken == null || accessToken.isEmpty) {
-        debugLog('⚠️ Modo prueba');
+        print('⚠️ Modo prueba');
         final testId = 'test_${DateTime.now().millisecondsSinceEpoch}';
         return {
           'qr_data': 'https://www.mercadopago.com.ar/checkout/test/$testId',
@@ -171,7 +170,7 @@ class MercadoPagoService {
         'auto_return': 'approved',
       };
 
-      debugLog('Enviando a Mercado Pago...');
+      print('Enviando a Mercado Pago...');
       final response = await http.post(
         Uri.parse('$_baseUrl/checkout/preferences'),
         headers: {
@@ -181,22 +180,22 @@ class MercadoPagoService {
         body: json.encode(body),
       ).timeout(Duration(seconds: _timeoutSeconds));
 
-      debugLog('Respuesta: ${response.statusCode}');
+      print('Respuesta: ${response.statusCode}');
 
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
-        debugLog('✓ QR generado');
+        print('✓ QR generado');
         return {
           'qr_data': data['init_point'] ?? '',
           'preference_id': data['id'] ?? '',
           'sandbox_init_point': data['sandbox_init_point'] ?? '',
         };
       } else {
-        debugLog('Error ${response.statusCode}: ${response.body}');
+        print('Error ${response.statusCode}: ${response.body}');
         return null;
       }
     } catch (e) {
-      debugLog('Error creando QR: $e');
+      print('Error creando QR: $e');
       return null;
     }
   }
@@ -213,7 +212,7 @@ class MercadoPagoService {
       if (token.isNotEmpty) {
         try {
           final decrypted = await SecurityHelper.decrypt(token);
-          tokenInfo = 'Token presente (${decrypted.length} chars)';
+          tokenInfo = 'Token: ${decrypted.substring(0, 20)}... (${decrypted.length} chars)';
         } catch (e) {
           tokenInfo = 'Error: $e';
         }
@@ -230,9 +229,9 @@ class MercadoPagoService {
 
   static Future<void> debugPrintConfig() async {
     final info = await getDebugInfo();
-    debugLog('═══════════════════════════════════════');
-    debugLog('DEBUG - Mercado Pago');
-    info.forEach((key, value) => debugLog('$key: $value'));
-    debugLog('═══════════════════════════════════════');
+    print('═══════════════════════════════════════');
+    print('DEBUG - Mercado Pago');
+    info.forEach((key, value) => print('$key: $value'));
+    print('═══════════════════════════════════════');
   }
 }

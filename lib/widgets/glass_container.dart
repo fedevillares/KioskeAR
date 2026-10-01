@@ -17,7 +17,6 @@ class GlassContainer extends StatelessWidget {
   final Color? color;
   final List<BoxShadow>? boxShadow;
   final Border? border;
-  final bool enableBlur;
 
   const GlassContainer({
     Key? key,
@@ -32,7 +31,6 @@ class GlassContainer extends StatelessWidget {
     this.color,
     this.boxShadow,
     this.border,
-    this.enableBlur = true,
   }) : super(key: key);
 
   @override
@@ -41,17 +39,6 @@ class GlassContainer extends StatelessWidget {
     final fill = color ?? (isDark ? AppConstants.glassFillDark : AppConstants.glassFillLight);
     final borderColor = isDark ? AppConstants.glassBorderDark : AppConstants.glassBorderLight;
     final shadowColor = isDark ? AppConstants.glassShadowDark : AppConstants.glassShadowLight;
-
-    final content = Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        gradient: gradient,
-        color: gradient == null ? fill : null,
-        borderRadius: borderRadius,
-        border: border ?? Border.all(color: borderColor, width: 1.2),
-      ),
-      child: child,
-    );
 
     return Container(
       width: width,
@@ -70,19 +57,19 @@ class GlassContainer extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: borderRadius,
-        // BackdropFilter es uno de los widgets más caros de Flutter: cada
-        // instancia visible fuerza a la GPU a resamplear y desenfocar lo que
-        // hay detrás en cada frame. Usado una vez (headers, fondos, diálogos)
-        // no se nota; repetido por cada tarjeta de una lista que se scrollea
-        // (productos, inventario, clientes) es la causa típica de scroll con
-        // pocos FPS en gama media/baja. `enableBlur: false` lo evita ahí,
-        // conservando el mismo relleno traslúcido, borde y sombra.
-        child: enableBlur
-            ? BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-                child: content,
-              )
-            : content,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+          child: Container(
+            padding: padding,
+            decoration: BoxDecoration(
+              gradient: gradient,
+              color: gradient == null ? fill : null,
+              borderRadius: borderRadius,
+              border: border ?? Border.all(color: borderColor, width: 1.2),
+            ),
+            child: child,
+          ),
+        ),
       ),
     );
   }

@@ -454,7 +454,6 @@ class _CashClosingPageState extends State<CashClosingPage> with SingleTickerProv
             padding: const EdgeInsets.only(bottom: 12),
             child: GlassContainer(
               borderRadius: BorderRadius.circular(16),
-              enableBlur: false,
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 leading: Container(
